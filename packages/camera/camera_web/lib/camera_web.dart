@@ -283,10 +283,10 @@ class CameraPlugin extends CameraPlatform {
         cameraId,
         capabilities?.width?.max.toDouble() ?? video.videoWidth.toDouble(),
         capabilities?.height?.max.toDouble() ?? video.videoHeight.toDouble(),
-        //TODO: Maybe use settings/capabilities.exposureMode
+        //TODO: Maybe use settings.exposureMode
         ExposureMode.auto,
         false,
-        //TODO: Maybe use settings/capabilities.focusMode
+        //TODO: Maybe use settings.focusMode
         FocusMode.auto,
         false));
   }
@@ -368,7 +368,9 @@ class CameraPlugin extends CameraPlatform {
 
   /// Not needed in web
   @override
-  Future<void> prepareForVideoRecording() async {}
+  Future<void> prepareForVideoRecording() async {
+    // TODO: Should this throw?
+  }
 
   @override
   Future<void> resumeVideoRecording(int cameraId) async {
@@ -388,7 +390,13 @@ class CameraPlugin extends CameraPlatform {
   @override
   Future<double> setExposureOffset(int cameraId, double offset) async {
     final stream = _cameras.get(cameraId).stream!;
-    //TODO: Validate the offset
+
+    final min = await getMinExposureOffset(cameraId);
+    final max = await getMaxExposureOffset(cameraId);
+    if (offset < min || offset > max) {
+      throw CameraException('Exposure offset out of bounds',
+          '(exposure offset should be between $min and $max)');
+    }
 
     final track = stream.getVideoTracks().first;
     await track.applyConstraints({
@@ -397,8 +405,8 @@ class CameraPlugin extends CameraPlatform {
       ]
     });
 
-    //TODO: Get the set offset from `track.getSettings()`.
-    return offset;
+    final settings = await track.getSettings();
+    return settings['exposureTime'] ?? offset;
   }
 
   @override
@@ -428,6 +436,13 @@ class CameraPlugin extends CameraPlatform {
   @override
   Future<void> setZoomLevel(int cameraId, double zoom) async {
     final stream = _cameras.get(cameraId).stream!;
+
+    final min = await getMinZoomLevel(cameraId);
+    final max = await getMaxZoomLevel(cameraId);
+    if (zoom < min || zoom > max) {
+      throw CameraException('Zoom level out of bounds',
+          '(zoom level should be between $min and $max)');
+    }
 
     final track = stream.getVideoTracks().first;
     await track.applyConstraints({
