@@ -253,8 +253,13 @@ class CameraPlugin extends CameraPlatform {
           'Invalid constraint: ${e.constraint}');
     }
 
-    final video = VideoElement()..applyDefaultStyles();
-    final div = DivElement()..style.setProperty('object-fit', 'cover')..append(video);
+    final video = VideoElement()
+      ..applyDefaultStyles()
+      ..setAttribute('playsinline', 'true');
+
+    final div = DivElement()
+      ..style.setProperty('object-fit', 'cover')
+      ..append(video);
 
     // See https://github.com/flutter/flutter/issues/41563
     // ignore: undefined_prefixed_name
