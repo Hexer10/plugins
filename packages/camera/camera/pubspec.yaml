@@ -13,7 +13,10 @@ dependencies:
 
   #TODO: Not sure on which version the plugin is going to be published.
   camera_web:
-    path: ../camera_web
+    git:
+      url: https://github.com/Hexer10/plugins.git
+      ref: camera-web
+      path: packages/camera/camera_web
 
   pedantic: ^1.10.0
   quiver: ^3.0.0
@@ -43,13 +46,6 @@ flutter:
         pluginClass: CameraPlugin
       web:
         default_package: camera_web
-
-dependency_overrides:
-  camera_web:
-    git:
-      url: https://github.com/Hexer10/plugins.git
-      ref: camera-web
-      path: packages/camera/camera_web
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
