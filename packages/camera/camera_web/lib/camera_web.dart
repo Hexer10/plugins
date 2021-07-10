@@ -13,7 +13,9 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 import 'media_track_capabilities.dart';
 
-class CameraInfo {
+String _getViewType(int cameraId) => 'plugins.flutter.io/camera_$cameraId';
+
+class Camera {
   /// Device id assigned by the plugin
   final int id;
 
@@ -22,14 +24,15 @@ class CameraInfo {
 
   MediaDeviceInfo? deviceInfo;
   VideoElement? videoElement;
+  DivElement? divElement;
   MediaStream? stream;
   MediaRecorder? recorder;
 
-  CameraInfo(this.id);
+  Camera(this.id);
 }
 
-extension on Map<int, CameraInfo> {
-  CameraInfo get(int id,
+extension on Map<int, Camera> {
+  Camera get(int id,
       {bool throwNotInitialized = true, bool throwDisposed = true}) {
     final e = this[id];
     if (e == null) {
@@ -51,7 +54,7 @@ extension on Map<int, CameraInfo> {
 class CameraPlugin extends CameraPlatform {
   int _nextId = 1;
 
-  final _cameras = <int, CameraInfo>{};
+  final _cameras = <int, Camera>{};
 
   final _cameraEvents = StreamController<CameraEvent>.broadcast();
 
@@ -118,7 +121,7 @@ class CameraPlugin extends CameraPlatform {
   Widget buildPreview(int cameraId) {
     _cameras.get(cameraId);
 
-    return HtmlElementView(viewType: 'video-view-$cameraId');
+    return HtmlElementView(viewType: _getViewType(cameraId));
   }
 
   @override
@@ -142,7 +145,7 @@ class CameraPlugin extends CameraPlatform {
           'Couldn\'t find a camera labeled: ${cameraDescription.name}');
     }
 
-    final device = CameraInfo(_nextId++);
+    final device = Camera(_nextId++);
     device.deviceInfo = l.first;
 
     _cameras[device.id] = device;
@@ -250,12 +253,13 @@ class CameraPlugin extends CameraPlatform {
           'Invalid constraint: ${e.constraint}');
     }
 
-    final video = VideoElement();
+    final video = VideoElement()..applyDefaultStyles();
+    final div = DivElement()..style.setProperty('object-fit', 'cover')..append(video);
 
     // See https://github.com/flutter/flutter/issues/41563
     // ignore: undefined_prefixed_name
     ui.platformViewRegistry
-        .registerViewFactory('video-view-$cameraId', (int viewId) => video);
+        .registerViewFactory(_getViewType(cameraId), (int viewId) => div);
     //TODO: Does the view factory need to be disposed?
 
     camera.videoElement = video;
@@ -519,5 +523,19 @@ class CameraPlugin extends CameraPlatform {
     }
 
     window.screen!.orientation!.unlock();
+  }
+}
+
+extension on VideoElement {
+  void applyDefaultStyles() {
+    style
+      ..removeProperty('transform-origin')
+      ..setProperty('pointer-events', 'none')
+      ..setProperty('width', '100%')
+      ..setProperty('height', '100%')
+      ..setProperty('transform', 'scaleX(-1)')
+      ..setProperty('object-fit', 'cover')
+      ..setProperty('-webkit-transform', 'scaleX(-1)')
+      ..setProperty('-moz-transform', 'scaleX(-1)');
   }
 }
